@@ -9,6 +9,7 @@ export interface IUser extends Document {
   email: string;
   firstName: string;
   lastName: string;
+  fullName?: string;
   gender: string;
   birthDate: string;
   age?: number;
@@ -38,6 +39,7 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
     email: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    fullName: { type: String },
     gender: { type: String, required: true },
     birthDate: { type: Date, required: true, default: Date.now },
     age: { type: Number },
@@ -61,6 +63,11 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre<IUser>("save", function (next): void {
+  this.fullName = `${this.firstName} ${this.lastName}`;
+  next();
+});
 
 userSchema.methods.generateAuthToken = function (): string {
   const payload: ItokenPayload = {
