@@ -7,7 +7,9 @@ import auth from "../middlewares/auth";
 const router: Router = express.Router();
 
 router.get("/me", auth, async (req: Request, res: Response) => {
-  const user = await User.findById((req as any).user._id).select("-password");
+  const user: IUser | null = await User.findById((req as any).user._id).select(
+    "-password"
+  );
   res.send(user);
 });
 
@@ -40,10 +42,17 @@ router.post("/register", async (req: Request, res: Response) => {
     user.password = await bcrypt.hash(user.password, 10);
     await user.save();
     res.send(user);
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     res.status(500).send("Unexpected error occured");
   }
+});
+
+router.get("/search/:name", auth, async (req: Request, res: Response) => {
+  const user: IUser[] = await User.find({
+    fullName: { $regex: req.params.name, $options: "i" },
+  });
+  res.send(user);
 });
 
 export = router;
