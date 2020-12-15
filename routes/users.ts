@@ -1,10 +1,15 @@
 import express, { Router, Request, Response } from "express";
 import _ from "lodash";
-import Joi from "joi";
 import bcrypt from "bcryptjs";
 import User, { IUser, validate } from "../models/user";
+import auth from "../middlewares/auth";
 
 const router: Router = express.Router();
+
+router.get("/me", auth, async (req: Request, res: Response) => {
+  const user = await User.findById((req as any).user._id).select("-password");
+  res.send(user);
+});
 
 router.post("/register", async (req: Request, res: Response) => {
   const { error } = validate(req.body);
