@@ -20,6 +20,7 @@ export interface IUser extends Document {
   zip: string;
   status: string;
   password: string;
+  friends?: string[];
   generateAuthToken(): string;
 }
 
@@ -32,7 +33,7 @@ interface ItokenPayload {
 
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema(
+const userSchema: mongoose.Schema<IUser> = new Schema(
   {
     email: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
@@ -53,6 +54,7 @@ const userSchema = new Schema(
       default: "active",
     },
     password: { type: String, required: true },
+    friends: [String],
     isDeleted: { type: Boolean, required: true, default: false },
   },
   {
