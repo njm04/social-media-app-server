@@ -8,10 +8,13 @@ export interface IPost extends Document {
 
 const Schema = mongoose.Schema;
 
-const postSchema: mongoose.Schema<IPost> = new Schema({
-  post: { type: String, required: true },
-  postedBy: { type: Schema.Types.ObjectId, ref: "User" },
-});
+const postSchema: mongoose.Schema<IPost> = new Schema(
+  {
+    post: { type: String, required: true },
+    postedBy: { type: Schema.Types.ObjectId, ref: "User" },
+  },
+  { timestamps: true }
+);
 
 export const validate = (post: object): ValidationResult => {
   const schema: Joi.ObjectSchema<IPost> = Joi.object({
