@@ -19,4 +19,9 @@ router.post("/", auth, async (req: Request, res: Response) => {
   }
 });
 
+router.get("/", auth, async (req: Request, res: Response) => {
+  const posts = await Post.find({});
+  res.send(posts);
+});
+
 export = router;
