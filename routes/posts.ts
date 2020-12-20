@@ -20,7 +20,9 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const posts = await Post.find({});
+  const posts = await Post.find({})
+    .populate("postedBy", "_id name firstName lastName fullName")
+    .select("-__v");
   res.send(posts);
 });
 
