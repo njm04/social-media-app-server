@@ -32,7 +32,21 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const posts = await Post.find({}).select("-__v");
+  // const t = await Post.find({}).select("-__v");
+  // console.log(t);
+  // the aggregate function below counts comments of each posts
+  const posts = await Post.aggregate([
+    {
+      $lookup: {
+        from: "comments",
+        let: { post: "$_id" },
+        pipeline: [{ $match: { $expr: { $eq: ["$$post", "$post"] } } }],
+        as: "commentCount",
+      },
+    },
+    { $addFields: { commentCount: { $size: "$commentCount" } } },
+  ]);
+
   res.send(posts);
 });
 
