@@ -2,6 +2,7 @@ import mongoose, { Document } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 
 interface ICreatedBy {
+  _id: string;
   firstName: string;
   lastName: string;
 }
@@ -19,7 +20,6 @@ const commentSchema = new Schema(
     post: { type: Schema.Types.ObjectId, ref: "Post", required: true },
     comment: { type: String, Required: true },
     createdBy: {
-      _id: false,
       type: new Schema({
         firstName: { type: String, required: true },
         lastName: { type: String, required: true },
