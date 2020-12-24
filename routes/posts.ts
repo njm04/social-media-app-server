@@ -32,9 +32,6 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  // const t = await Post.find({}).select("-__v");
-  // console.log(t);
-  // the aggregate function below counts comments of each posts
   const posts = await Post.aggregate([
     {
       $lookup: {
