@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import mongoose from "mongoose";
 import _ from "lodash";
 import Comment, { IComment, validate } from "../models/comment";
 import User from "../models/user";
@@ -6,6 +7,7 @@ import Post, { IPost } from "../models/post";
 import CommentCount from "../models/commentCount";
 import auth from "../middlewares/auth";
 import Joi, { ValidationResult } from "joi";
+import validateObjectId from "../middlewares/validateObjectId";
 
 const router: Router = Router();
 
@@ -51,28 +53,38 @@ router.post("/", auth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:postId", auth, async (req: Request, res: Response) => {
-  const post: IPost | null = await Post.findById(req.params.postId);
-  if (!post) return res.status(400).send("Invalid post");
+router.get(
+  "/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const post: IPost | null = await Post.findById(req.params.id);
+    if (!post) return res.status(400).send("Invalid post");
 
-  const comments: IComment[] = await Comment.find({
-    post: post._id,
-  }).select("-__v -updatedAt");
-  if (!comments || comments.length === 0)
-    return res.status(400).send("No comments found");
-  console.log(comments);
-  res.send(comments);
-});
+    const comments: IComment[] = await Comment.find({
+      post: post._id,
+    }).select("-__v -updatedAt");
+    if (!comments || comments.length === 0)
+      return res.status(400).send("No comments found");
 
-router.get("/count/:postId", auth, async (req: Request, res: Response) => {
-  console.log(req.params);
-  const post: IPost | null = await Post.findById(req.params.postId);
-  if (!post) return res.status(400).send("Invalid post");
+    res.send(comments);
+  }
+);
 
-  const commentsCount = await CommentCount.findOne({ postId: post._id }).select(
-    "_id postId count"
-  );
-  res.send(commentsCount);
+// router.get("/count/:postId", auth, async (req: Request, res: Response) => {
+//   console.log(req.params);
+//   const post: IPost | null = await Post.findById(req.params.postId);
+//   if (!post) return res.status(400).send("Invalid post");
+
+//   const commentsCount = await CommentCount.findOne({ postId: post._id }).select(
+//     "_id postId count"
+//   );
+//   res.send(commentsCount);
+// });
+
+router.get("/", auth, async (req: Request, res: Response) => {
+  const commentsCount = await CommentCount.find({});
+  console.log(commentsCount);
+  res.send(commentsCount.length > 0 && commentsCount);
 });
 
 const validatePostId = (id: object): ValidationResult => {
