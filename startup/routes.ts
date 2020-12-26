@@ -5,6 +5,7 @@ import auth from "../routes/auth";
 import posts from "../routes/posts";
 import comments from "../routes/comments";
 import friends from "../routes/friends";
+import images from "../routes/images";
 
 const corsOptions = {
   exposedHeaders: "x-auth-token",
@@ -18,4 +19,5 @@ module.exports = (app: Application): void => {
   app.use("/api/posts", posts);
   app.use("/api/comments", comments);
   app.use("/api/friends", friends);
+  app.use("/api/images", images);
 };

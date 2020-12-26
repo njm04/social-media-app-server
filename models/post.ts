@@ -11,6 +11,7 @@ interface IPostedBy {
 export interface IPost extends Document {
   post: string;
   postedBy: IPostedBy; // string type also works
+  postImages: object[];
 }
 
 const Schema = mongoose.Schema;
@@ -25,6 +26,7 @@ const postSchema: mongoose.Schema<IPost> = new Schema(
         fullName: { type: String, required: true },
       }),
     },
+    postImages: { type: Array },
   },
   { timestamps: true }
 );

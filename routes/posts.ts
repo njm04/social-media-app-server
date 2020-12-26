@@ -1,13 +1,14 @@
 import { Router, Request, Response } from "express";
 import _ from "lodash";
 import Post, { IPost, validate } from "../models/post";
-import User from "../models/user";
 import auth from "../middlewares/auth";
+import User from "../models/user";
+import Images from "../models/image";
 
 const router: Router = Router();
 
 router.post("/", auth, async (req: Request, res: Response) => {
-  const { error } = validate(req.body);
+  const { error } = validate(_.pick(req.body, ["postedBy", "post"]));
   if (error) return res.status(400).send(error.details[0].message);
 
   const user = await User.findById(req.body.postedBy);
@@ -23,7 +24,16 @@ router.post("/", auth, async (req: Request, res: Response) => {
         fullName: user.fullName,
       },
     });
+
+    const images = new Images({
+      imageData: req.body.imageData,
+      postId: post._id,
+    });
+    post.postImages = req.body.imageData;
+
     await post.save();
+    await images.save();
+
     res.send(post);
   } catch (error) {
     console.log(error);
