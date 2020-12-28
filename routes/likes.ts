@@ -16,13 +16,8 @@ router.post("/", auth, async (req: Request, res: Response) => {
   const post = await Post.findById(req.body.postId);
   if (!post) return res.status(400).send("Invalid post");
 
-  const options = { new: true };
-  const likeInfo = await Like.findOneAndUpdate(
-    { postId: post._id, userId: user._id },
-    { $inc: { likesCount: 1 } },
-    options
-  );
-  if (likeInfo) return res.send(likeInfo);
+  const like = await Like.findOne({ postId: post._id, userId: user._id });
+  if (like) return res.send(like);
   else {
     try {
       const like = new Like({
@@ -52,8 +47,11 @@ router.delete("/", auth, async (req: Request, res: Response) => {
   const post = await Post.findById(req.body.postId);
   if (!post) return res.status(400).send("Invalid post");
 
-  const deleted = await Like.deleteOne({ userId: user._id, postId: post._id });
-  res.send(deleted);
+  const like = await Like.findOne({ userId: user._id, postId: post._id });
+  if (!like) return res.status(400).send("Invalid like");
+
+  await Like.deleteOne({ userId: user._id, postId: post._id });
+  res.send(like);
 });
 
 export = router;
