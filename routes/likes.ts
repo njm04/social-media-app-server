@@ -18,7 +18,7 @@ router.post("/", auth, async (req: Request, res: Response) => {
 
   const options = { new: true };
   const likeInfo = await Like.findOneAndUpdate(
-    { postId: post._id },
+    { postId: post._id, userId: user._id },
     { $inc: { likesCount: 1 } },
     options
   );
