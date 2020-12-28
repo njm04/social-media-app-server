@@ -76,7 +76,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
       postId: post._id,
       userId: user._id,
     });
-    if (deleted.ok === 1) {
+    if (deleted.ok === 1 && post.likes > 0) {
       post = await Post.findByIdAndUpdate(
         req.body.postId,
         {
