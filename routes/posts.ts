@@ -3,6 +3,7 @@ import Joi, { ValidationResult } from "joi";
 import _ from "lodash";
 import Post, { IPost, validate } from "../models/post";
 import auth from "../middlewares/auth";
+import validateObjectId from "../middlewares/validateObjectId";
 import User from "../models/user";
 import Images from "../models/image";
 import Like from "../models/like";
@@ -104,6 +105,20 @@ router.get("/", auth, async (req: Request, res: Response) => {
 
   res.send(posts);
 });
+
+router.delete(
+  "/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(400).send("Post not found");
+
+    const deleted = await Post.deleteOne({ _id: post._id });
+    if (deleted.ok !== 1) return res.status(400).send("Unable to delete");
+    await Like.deleteOne({ postId: post._id });
+    res.send(post);
+  }
+);
 
 const validateIds = (data: object): ValidationResult => {
   const schema: Joi.ObjectSchema = Joi.object({
