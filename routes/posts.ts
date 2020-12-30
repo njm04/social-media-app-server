@@ -70,6 +70,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
       },
       { new: true }
     );
+    if (!post) return res.status(400).send("Invalid post");
 
     return res.send(post);
   } else {
@@ -85,6 +86,8 @@ router.post("/like", auth, async (req: Request, res: Response) => {
         },
         { new: true }
       );
+      if (!post) return res.status(400).send("Invalid post");
+
       return res.send(post);
     }
   }
@@ -116,6 +119,21 @@ router.delete(
     const deleted = await Post.deleteOne({ _id: post._id });
     if (deleted.ok !== 1) return res.status(400).send("Unable to delete");
     await Like.deleteOne({ postId: post._id });
+    res.send(post);
+  }
+);
+
+router.patch(
+  "/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const options = { new: true };
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { post: req.body.newPost },
+      options
+    );
+    if (!post) return res.status(400).send("Invalid post");
     res.send(post);
   }
 );
