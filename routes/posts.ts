@@ -31,6 +31,7 @@ router.post("/", auth, async (req: Request, res: Response) => {
     const images = new Images({
       imageData: req.body.imageData,
       postId: post._id,
+      userId: user._id,
     });
     post.postImages = req.body.imageData;
 
