@@ -30,6 +30,7 @@ interface ItokenPayload {
   email: string;
   firstName: string;
   lastName: string;
+  fullName: string;
 }
 
 const Schema = mongoose.Schema;
@@ -58,6 +59,13 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
     password: { type: String, required: true },
     friends: [String],
     isDeleted: { type: Boolean, required: true, default: false },
+    profilePicture: new Schema(
+      {
+        name: { type: String },
+        url: { type: String },
+      },
+      { _id: false }
+    ),
   },
   {
     timestamps: true,
@@ -75,6 +83,7 @@ userSchema.methods.generateAuthToken = function (): string {
     email: this.email,
     firstName: this.firstName,
     lastName: this.lastName,
+    fullName: this.fullName,
   };
 
   return jwt.sign(payload, config.get("jwtPrivateKey"), { expiresIn: "24h" });
