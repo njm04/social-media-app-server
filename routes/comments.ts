@@ -63,23 +63,12 @@ router.get(
     const comments: IComment[] = await Comment.find({
       post: post._id,
     }).select("-__v -updatedAt");
-    if (!comments || comments.length === 0)
-      return res.status(400).send("No comments found");
+    // if (!comments || comments.length === 0)
+    //   return res.status(400).send("No comments found");
 
     res.send(comments);
   }
 );
-
-// router.get("/count/:postId", auth, async (req: Request, res: Response) => {
-//   console.log(req.params);
-//   const post: IPost | null = await Post.findById(req.params.postId);
-//   if (!post) return res.status(400).send("Invalid post");
-
-//   const commentsCount = await CommentCount.findOne({ postId: post._id }).select(
-//     "_id postId count"
-//   );
-//   res.send(commentsCount);
-// });
 
 router.get("/", auth, async (req: Request, res: Response) => {
   const commentsCount = await CommentCount.find({});
