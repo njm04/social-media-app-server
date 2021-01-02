@@ -128,6 +128,9 @@ router.patch(
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
     const options = { new: true };
+
+    if (!req.body.newPost) return res.status(400).send("empty post");
+
     const post = await Post.findByIdAndUpdate(
       req.params.id,
       { post: req.body.newPost },
