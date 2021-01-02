@@ -5,6 +5,7 @@ interface IUploadImage extends Document {
   name: string;
   data: string;
   postId?: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
 }
 
 const Schema = mongoose.Schema;
@@ -17,6 +18,7 @@ const imageSchema = new Schema({
     },
   ],
   postId: { type: mongoose.Types.ObjectId },
+  userId: { type: mongoose.Types.ObjectId },
 });
 
 export default mongoose.model<IUploadImage>("Image", imageSchema);
