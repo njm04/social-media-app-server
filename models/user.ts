@@ -25,12 +25,18 @@ export interface IUser extends Document {
   generateAuthToken(): string;
 }
 
+interface IProfPic {
+  name: string;
+  url: string;
+}
+
 interface ItokenPayload {
   _id: string;
   email: string;
   firstName: string;
   lastName: string;
   fullName: string;
+  profilePicture: IProfPic;
 }
 
 const Schema = mongoose.Schema;
@@ -84,6 +90,7 @@ userSchema.methods.generateAuthToken = function (): string {
     firstName: this.firstName,
     lastName: this.lastName,
     fullName: this.fullName,
+    profilePicture: this.profilePicture,
   };
 
   return jwt.sign(payload, config.get("jwtPrivateKey"), { expiresIn: "24h" });
