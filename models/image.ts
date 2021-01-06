@@ -21,4 +21,16 @@ const imageSchema = new Schema({
   userId: { type: mongoose.Types.ObjectId },
 });
 
+export const validate = (data: object): ValidationResult => {
+  const schema: Joi.ObjectSchema = Joi.object({
+    userId: Joi.string().required(),
+    imageData: Joi.object({
+      name: Joi.string().required(),
+      url: Joi.string().required(),
+    }),
+  });
+
+  return schema.validate(data);
+};
+
 export default mongoose.model<IUploadImage>("Image", imageSchema);
