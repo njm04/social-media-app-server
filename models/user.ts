@@ -93,7 +93,7 @@ userSchema.methods.generateAuthToken = function (): string {
     profilePicture: this.profilePicture,
   };
 
-  return jwt.sign(payload, config.get("jwtPrivateKey"), { expiresIn: "24h" });
+  return jwt.sign(payload, config.get("jwtPrivateKey"));
 };
 
 export const validate = (user: object): ValidationResult => {
