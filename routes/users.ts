@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from "express";
 import _ from "lodash";
 import bcrypt from "bcryptjs";
 import User, { IUser, validate } from "../models/user";
+import Image from "../models/image";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
 
@@ -60,6 +61,19 @@ router.patch(
       options
     );
     if (!user) return res.status(400).send("Invalid user");
+
+    try {
+      const image = new Image({
+        imageData: user.profilePicture,
+        userId: user._id,
+      });
+
+      await image.save();
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Unexpected error occured");
+    }
+
     res.send(user);
   }
 );
