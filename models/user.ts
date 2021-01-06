@@ -5,6 +5,11 @@ import config from "config";
 // import joiObjectId from "joi-objectid";
 // const myJoiObjectId = joiObjectId(Joi);
 
+interface IProfPic {
+  name: string;
+  url: string;
+}
+
 export interface IUser extends Document {
   email: string;
   firstName: string;
@@ -22,12 +27,8 @@ export interface IUser extends Document {
   status: string;
   password: string;
   friends?: string[];
+  profilePicture: IProfPic;
   generateAuthToken(): string;
-}
-
-interface IProfPic {
-  name: string;
-  url: string;
 }
 
 interface ItokenPayload {
