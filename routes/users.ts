@@ -78,6 +78,34 @@ router.patch(
   }
 );
 
+router.patch(
+  "/update-cover-photo/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const options = { new: true };
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { coverPhoto: { name: req.body.name, url: req.body.url } },
+      options
+    );
+    if (!user) return res.status(400).send("Invalid user");
+
+    try {
+      const image = new Image({
+        imageData: user.coverPhoto,
+        userId: user._id,
+      });
+
+      await image.save();
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Unexpected error occured");
+    }
+
+    res.send(user);
+  }
+);
+
 router.get("/search/:name", auth, async (req: Request, res: Response) => {
   const user: IUser[] = await User.find({
     fullName: { $regex: req.params.name, $options: "i" },

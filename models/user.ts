@@ -28,6 +28,7 @@ export interface IUser extends Document {
   password: string;
   friends?: string[];
   profilePicture: IProfPic;
+  coverPhoto: IProfPic;
   generateAuthToken(): string;
 }
 
@@ -38,6 +39,7 @@ interface ItokenPayload {
   lastName: string;
   fullName: string;
   profilePicture: IProfPic;
+  coverPhoto: IProfPic;
 }
 
 const Schema = mongoose.Schema;
@@ -73,6 +75,13 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
       },
       { _id: false }
     ),
+    coverPhoto: new Schema(
+      {
+        name: { type: String },
+        url: { type: String },
+      },
+      { _id: false }
+    ),
   },
   {
     timestamps: true,
@@ -92,6 +101,7 @@ userSchema.methods.generateAuthToken = function (): string {
     lastName: this.lastName,
     fullName: this.fullName,
     profilePicture: this.profilePicture,
+    coverPhoto: this.coverPhoto,
   };
 
   return jwt.sign(payload, config.get("jwtPrivateKey"));
