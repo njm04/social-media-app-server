@@ -19,7 +19,7 @@ const Schema = mongoose.Schema;
 
 const postSchema: mongoose.Schema<IPost> = new Schema(
   {
-    post: { type: String, required: true },
+    post: { type: String, default: "" },
     postedBy: {
       type: new Schema({
         firstName: { type: String, required: true },
@@ -35,7 +35,7 @@ const postSchema: mongoose.Schema<IPost> = new Schema(
 
 export const validate = (post: object): ValidationResult => {
   const schema: Joi.ObjectSchema<IPost> = Joi.object({
-    post: Joi.string().required(),
+    post: Joi.string().required().allow(""),
     postedBy: Joi.string().required(),
   });
 
