@@ -14,7 +14,7 @@ export interface IUser extends Document {
   email: string;
   firstName: string;
   lastName: string;
-  fullName?: string;
+  fullName: string;
   gender: string;
   birthDate: string;
   age?: number;

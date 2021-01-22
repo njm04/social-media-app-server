@@ -5,6 +5,7 @@ interface ICreatedBy {
   _id: string;
   firstName: string;
   lastName: string;
+  fullName: string;
 }
 
 export interface IComment extends Document {
@@ -23,6 +24,7 @@ const commentSchema = new Schema(
       type: new Schema({
         firstName: { type: String, required: true },
         lastName: { type: String, required: true },
+        fullName: { type: String, required: true },
       }),
       required: true,
     },

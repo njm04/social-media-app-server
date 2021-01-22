@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import mongoose from "mongoose";
 import _ from "lodash";
 import Comment, { IComment, validate } from "../models/comment";
 import User from "../models/user";
@@ -29,6 +28,7 @@ router.post("/", auth, async (req: Request, res: Response) => {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
+      fullName: user.fullName,
     };
 
     await comment.save();
