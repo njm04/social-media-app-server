@@ -87,6 +87,24 @@ router.delete(
   }
 );
 
+router.patch(
+  "/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const options = { new: true };
+
+    if (!req.body.updatedComment) return res.status(400).send("empty comment");
+
+    const comment = await Comment.findByIdAndUpdate(
+      req.params.id,
+      { comment: req.body.updatedComment },
+      options
+    );
+    if (!comment) return res.status(400).send("Invalid comment");
+    res.send(comment);
+  }
+);
+
 const validatePostId = (id: object): ValidationResult => {
   const schema: Joi.ObjectSchema = Joi.object({
     postId: Joi.string().required(),
