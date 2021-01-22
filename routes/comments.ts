@@ -76,6 +76,17 @@ router.get("/", auth, async (req: Request, res: Response) => {
   res.send(commentsCount.length > 0 && commentsCount);
 });
 
+router.delete(
+  "/:id",
+  [auth, validateObjectId],
+  async (req: Request, res: Response) => {
+    const comment = await Comment.findOneAndDelete({ _id: req.params.id });
+    if (!comment) return res.status(400).send("Invalid comment");
+
+    res.send(comment);
+  }
+);
+
 const validatePostId = (id: object): ValidationResult => {
   const schema: Joi.ObjectSchema = Joi.object({
     postId: Joi.string().required(),
