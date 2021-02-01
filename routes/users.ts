@@ -106,12 +106,23 @@ router.patch(
   }
 );
 
-router.get("/search/:name", auth, async (req: Request, res: Response) => {
-  const user: IUser[] = await User.find({
-    fullName: { $regex: req.params.name, $options: "i" },
-  });
-  res.send(user);
-});
+router.get(
+  "/search/:searchQuery?",
+  auth,
+  async (req: Request, res: Response) => {
+    if (!req.params.searchQuery) return res.send([]);
+
+    const user: IUser[] = await User.find({
+      fullName: { $regex: req.params.searchQuery, $options: "i" },
+    })
+      .select("_id fullName profilePicture")
+      .limit(10);
+
+    if (user.length < 0) return res.send([]);
+
+    res.send(user);
+  }
+);
 
 router.get("/", auth, async (req: Request, res: Response) => {
   const user = await User.find({}).select("-password -__v");
