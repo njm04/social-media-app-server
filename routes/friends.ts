@@ -1,6 +1,5 @@
 import express, { Router, Request, Response } from "express";
 import _ from "lodash";
-import User, { IUser } from "../models/user";
 import FriendRequest, {
   IFriendRequest,
   validate as validateFriendRequest,
@@ -9,15 +8,18 @@ import auth from "../middlewares/auth";
 
 const router: Router = Router();
 
+router.get("/", auth, async (req: Request, res: Response) => {
+  const userId: string = (req as any).user;
+  const friends = await FriendRequest.find({
+    requester: userId,
+    status: { $ne: "rejected" },
+  }).select("-__v");
+  res.send(friends);
+});
+
 router.post("/", auth, async (req: Request, res: Response) => {
   const { error } = validateFriendRequest(req.body);
   if (error) return res.status(400).send(error.details[0].message);
-
-  // const friend: IUser[] = await User.find({
-  //   friends: { $in: [req.body.recipient] },
-  // });
-  // console.log(friend);
-  // if (!friend) return res.status(400).send("You are already friends");
 
   const isAlreadyRequested = await FriendRequest.findOne({
     requester: req.body.requester,
@@ -35,6 +37,14 @@ router.post("/", auth, async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).send("Unexpected error occured");
   }
+});
+
+router.delete("/:id", auth, async (req: Request, res: Response) => {
+  const friend = await FriendRequest.findOneAndDelete({
+    _id: req.params.id,
+  }).select("-__v");
+  if (!friend) return res.status(400).send("Unable to delete");
+  res.send(friend);
 });
 
 export = router;
