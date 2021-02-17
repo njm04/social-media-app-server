@@ -11,11 +11,10 @@ const router: Router = Router();
 router.get("/", auth, async (req: Request, res: Response) => {
   const userId: string = (req as any).user;
   const friends = await FriendRequest.find({
-    requester: userId,
     $or: [{ requester: userId }, { recipient: userId }],
     status: { $ne: "rejected" },
   }).select("-__v");
-  console.log(friends);
+
   res.send(friends);
 });
 
@@ -64,16 +63,33 @@ router.delete("/:id", auth, async (req: Request, res: Response) => {
 
 router.patch("/:id", auth, async (req: Request, res: Response) => {
   const options = { new: true };
-  console.log(req.body);
   if (!req.body.status) return res.status(400).send("Invalid status");
   const friendRequest = await FriendRequest.findByIdAndUpdate(
     req.params.id,
     { status: req.body.status },
     options
-  );
+  ).select("-__v");
   if (!friendRequest) return res.status(400).send("Invalid friend request");
 
   res.send(friendRequest);
 });
+
+// prepared for future use
+router.patch(
+  "/reject-request/:id",
+  auth,
+  async (req: Request, res: Response) => {
+    const options = { new: true };
+    if (!req.body.status) return res.status(400).send("Invalid status");
+    const friendRequest = await FriendRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      options
+    ).select("-__v");
+    if (!friendRequest) return res.status(400).send("Invalid friend request");
+
+    res.send(friendRequest);
+  }
+);
 
 export = router;
