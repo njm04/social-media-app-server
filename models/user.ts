@@ -62,7 +62,7 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["active", "deactivated", "unverified"],
+      enum: ["active", "deactivated", "unverified", "online", "offline"],
       default: "active",
     },
     password: { type: String, required: true },
