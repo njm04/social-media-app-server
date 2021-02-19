@@ -39,7 +39,7 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
       type: String,
       required: true,
       enum: ["active", "deactivated", "unverified", "online", "offline"],
-      default: "active",
+      default: "offline",
     },
     password: { type: String, required: true },
     friends: [String],
