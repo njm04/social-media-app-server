@@ -1,5 +1,6 @@
 import mongoose, { Document, Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
+import { pick } from "lodash";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "config";
@@ -24,6 +25,7 @@ interface IUserModel extends Model<IUser> {
   ) => Promise<IUser>;
   findBySearchQuery: (searchQuery: string) => Promise<IUser[]>;
   findAllUsers: () => Promise<IUser[]>;
+  findUserById: (id: mongoose.Types.ObjectId) => Promise<IUser>;
 }
 
 const Schema = mongoose.Schema;
@@ -131,15 +133,24 @@ userSchema.pre<IUser>("save", function (next): void {
   next();
 });
 
-userSchema.methods.generateAuthToken = function (): string {
+userSchema.statics.findUserById = async function (
+  id: mongoose.Types.ObjectId
+): Promise<IUser> {
+  return await this.findById(id);
+};
+
+userSchema.methods.generateAuthToken = async function (): Promise<string> {
+  const user = await UserModel.findUserById(this._id);
+
   const payload: ItokenPayload = {
-    _id: this._id,
-    email: this.email,
-    firstName: this.firstName,
-    lastName: this.lastName,
-    fullName: this.fullName,
-    profilePicture: this.profilePicture,
-    coverPhoto: this.coverPhoto,
+    _id: user._id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: user.fullName,
+    status: user.status,
+    profilePicture: user.profilePicture,
+    coverPhoto: user.coverPhoto,
   };
 
   return jwt.sign(payload, config.get("jwtPrivateKey"));

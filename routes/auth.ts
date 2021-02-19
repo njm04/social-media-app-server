@@ -11,11 +11,9 @@ router.post("/", async (req: Request, res: Response) => {
 
   const valid = await user.validatePassword(user.password, req.body.password);
   if (!valid) return res.status(400).send("Invalid password or email");
-
-  const token = user.generateAuthToken();
-  res.send(token);
-
   await User.findByIdAndUpdateStatusToActive(user._id);
+  const token = await user.generateAuthToken();
+  res.send(token);
 });
 
 router.patch("/logout/:userId", async (req: Request, res: Response) => {
@@ -23,7 +21,6 @@ router.patch("/logout/:userId", async (req: Request, res: Response) => {
     mongoose.Types.ObjectId(req.params.userId)
   );
   if (!user) return res.status(400).send("Invalid user");
-
   res.send({});
 });
 

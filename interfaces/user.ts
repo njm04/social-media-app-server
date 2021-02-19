@@ -24,7 +24,7 @@ export interface IUser extends Document {
   friends?: string[];
   profilePicture: IProfPic;
   coverPhoto: IProfPic;
-  generateAuthToken(): string;
+  generateAuthToken: () => Promise<string>;
   validatePassword: (
     currentPassword: string,
     inputtedPassword: string
@@ -37,6 +37,7 @@ export interface ItokenPayload {
   firstName: string;
   lastName: string;
   fullName: string;
+  status: string;
   profilePicture: IProfPic;
   coverPhoto: IProfPic;
 }
