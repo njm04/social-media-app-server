@@ -1,11 +1,13 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
+import { IUploadImage } from "../interfaces/image";
+import { IProfPic } from "../interfaces/user";
 
-interface IUploadImage extends Document {
-  name: string;
-  data: string;
-  postId?: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
+interface IImageModel extends Model<IUploadImage> {
+  saveImage: (
+    imageData: IProfPic,
+    userId: mongoose.Types.ObjectId
+  ) => Promise<void>;
 }
 
 const Schema = mongoose.Schema;
@@ -21,6 +23,20 @@ const imageSchema = new Schema({
   userId: { type: mongoose.Types.ObjectId },
 });
 
+imageSchema.statics.saveImage = async function (
+  imageData: IProfPic,
+  userId: mongoose.Types.ObjectId
+): Promise<void> {
+  const image = new ImageModel({ imageData, userId });
+  await image.save();
+};
+
+const ImageModel: IImageModel = mongoose.model<IUploadImage, IImageModel>(
+  "Image",
+  imageSchema
+);
+export default ImageModel;
+
 export const validate = (data: object): ValidationResult => {
   const schema: Joi.ObjectSchema = Joi.object({
     userId: Joi.string().required(),
@@ -32,5 +48,3 @@ export const validate = (data: object): ValidationResult => {
 
   return schema.validate(data);
 };
-
-export default mongoose.model<IUploadImage>("Image", imageSchema);

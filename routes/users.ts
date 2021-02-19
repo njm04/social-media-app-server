@@ -66,12 +66,7 @@ router.patch(
     if (!user) return res.status(400).send("Invalid user");
 
     try {
-      const image = new Image({
-        imageData: user.profilePicture,
-        userId: user._id,
-      });
-
-      await image.save();
+      await Image.saveImage(user.profilePicture, user._id);
     } catch (error) {
       console.log(error);
       res.status(500).send("Unexpected error occured");
@@ -95,12 +90,7 @@ router.patch(
     if (!user) return res.status(400).send("Invalid user");
 
     try {
-      const image = new Image({
-        imageData: user.coverPhoto,
-        userId: user._id,
-      });
-
-      await image.save();
+      await Image.saveImage(user.coverPhoto, user._id);
     } catch (error) {
       console.log(error);
       res.status(500).send("Unexpected error occured");
