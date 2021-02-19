@@ -1,4 +1,5 @@
 import express, { Router, Request, Response } from "express";
+import mongoose from "mongoose";
 import _ from "lodash";
 import bcrypt from "bcryptjs";
 import User, { validate } from "../models/user";
@@ -55,11 +56,12 @@ router.patch(
   "/update-profile-picture/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const options = { new: true };
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { profilePicture: { name: req.body.name, url: req.body.url } },
-      options
+    const id = mongoose.Types.ObjectId(req.params.id);
+    const user = await User.findByIdAndUpdatePhoto(
+      id,
+      req.body.name,
+      req.body.url,
+      "profile-picture"
     );
     if (!user) return res.status(400).send("Invalid user");
 
@@ -83,11 +85,12 @@ router.patch(
   "/update-cover-photo/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const options = { new: true };
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { coverPhoto: { name: req.body.name, url: req.body.url } },
-      options
+    const id = mongoose.Types.ObjectId(req.params.id);
+    const user = await User.findByIdAndUpdatePhoto(
+      id,
+      req.body.name,
+      req.body.url,
+      "cover-photo"
     );
     if (!user) return res.status(400).send("Invalid user");
 
@@ -113,12 +116,7 @@ router.get(
   async (req: Request, res: Response) => {
     if (!req.params.searchQuery) return res.send([]);
 
-    const user: IUser[] = await User.find({
-      fullName: { $regex: req.params.searchQuery, $options: "i" },
-    })
-      .select("_id fullName profilePicture")
-      .limit(10);
-
+    const user = await User.findBySearchQuery(req.params.searchQuery);
     if (user.length < 0) return res.send([]);
 
     res.send(user);
@@ -126,8 +124,7 @@ router.get(
 );
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const user = await User.find({}).select("-password -__v");
-  res.send(user);
+  res.send(await User.findAllUsers());
 });
 
 export = router;

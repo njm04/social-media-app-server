@@ -16,6 +16,14 @@ interface IUserModel extends Model<IUser> {
     id: mongoose.Types.ObjectId
   ) => Promise<IUser>;
   findOneByEmail: (email: string) => Promise<IUser>;
+  findByIdAndUpdatePhoto: (
+    id: mongoose.Types.ObjectId,
+    name: string,
+    url: string,
+    type: string
+  ) => Promise<IUser>;
+  findBySearchQuery: (searchQuery: string) => Promise<IUser[]>;
+  findAllUsers: () => Promise<IUser[]>;
 }
 
 const Schema = mongoose.Schema;
@@ -80,6 +88,42 @@ userSchema.statics.findOneByEmail = async function (
   email: string
 ): Promise<IUser> {
   return await this.findOne({ email });
+};
+
+userSchema.statics.findByIdAndUpdatePhoto = async function (
+  id: mongoose.Types.ObjectId,
+  name: string,
+  url: string,
+  type: string
+): Promise<IUser> {
+  const options = { new: true };
+  if (type === "profile-picture") {
+    return await this.findByIdAndUpdate(
+      id,
+      { profilePicture: { name, url } },
+      options
+    );
+  } else {
+    return await this.findByIdAndUpdate(
+      id,
+      { coverPhoto: { name, url } },
+      options
+    );
+  }
+};
+
+userSchema.statics.findBySearchQuery = async function (
+  searchQuery: string
+): Promise<IUser[]> {
+  return await this.find({
+    fullName: { $regex: searchQuery, $options: "i" },
+  })
+    .select("_id fullName profilePicture")
+    .limit(10);
+};
+
+userSchema.statics.findAllUsers = async function (): Promise<IUser[]> {
+  return await this.find({}).select("-password -__v");
 };
 
 userSchema.pre<IUser>("save", function (next): void {
