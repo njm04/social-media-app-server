@@ -1,31 +1,26 @@
 import express, { Router, Request, Response } from "express";
-import _ from "lodash";
-import bcrypt from "bcryptjs";
 import User, { IUser } from "../models/user";
-import auth from "../middlewares/auth";
+import mongoose from "mongoose";
 
 const router: Router = express.Router();
 
 router.post("/", async (req: Request, res: Response) => {
-  const user: IUser | null = await User.findOne({ email: req.body.email });
+  const user: IUser = await User.findOneByEmail(req.body.email);
   if (!user) return res.status(400).send("Invalid password or email");
 
-  const validPassword: boolean = await bcrypt.compare(
-    req.body.password,
-    user.password
-  );
-  if (!validPassword) return res.status(400).send("Invalid password or email");
+  const valid = await user.validatePassword(user.password, req.body.password);
+  if (!valid) return res.status(400).send("Invalid password or email");
 
   const token = user.generateAuthToken();
   res.send(token);
 
-  await User.findByIdAndUpdate(user._id, { status: "active" });
+  await User.findByIdAndUpdateStatusToActive(user._id);
 });
 
 router.patch("/logout/:userId", async (req: Request, res: Response) => {
-  const user: IUser | null = await User.findByIdAndUpdate(req.params.userId, {
-    status: "offline",
-  });
+  const user: IUser = await User.findByIdAndUpdateStatusToOffline(
+    mongoose.Types.ObjectId(req.params.userId)
+  );
   if (!user) return res.status(400).send("Invalid user");
 
   res.send({});

@@ -1,5 +1,6 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "config";
 // import joiObjectId from "joi-objectid";
@@ -30,16 +31,31 @@ export interface IUser extends Document {
   profilePicture: IProfPic;
   coverPhoto: IProfPic;
   generateAuthToken(): string;
+  validatePassword: (
+    currentPassword: string,
+    inputtedPassword: string
+  ) => Promise<boolean>;
 }
 
 interface ItokenPayload {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   email: string;
   firstName: string;
   lastName: string;
   fullName: string;
   profilePicture: IProfPic;
   coverPhoto: IProfPic;
+}
+
+// static methods
+interface IUserModel extends Model<IUser> {
+  findByIdAndUpdateStatusToActive: (
+    id: mongoose.Types.ObjectId
+  ) => Promise<void>;
+  findByIdAndUpdateStatusToOffline: (
+    id: mongoose.Types.ObjectId
+  ) => Promise<IUser>;
+  findOneByEmail: (email: string) => Promise<IUser>;
 }
 
 const Schema = mongoose.Schema;
@@ -88,6 +104,24 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
   }
 );
 
+userSchema.statics.findByIdAndUpdateStatusToActive = async function (
+  id: mongoose.Types.ObjectId
+): Promise<void> {
+  await this.findByIdAndUpdate(id, { status: "active" });
+};
+
+userSchema.statics.findByIdAndUpdateStatusToOffline = async function (
+  id: mongoose.Types.ObjectId
+): Promise<IUser> {
+  return await this.findByIdAndUpdate(id, { status: "offline" });
+};
+
+userSchema.statics.findOneByEmail = async function (
+  email: string
+): Promise<IUser> {
+  return await this.findOne({ email });
+};
+
 userSchema.pre<IUser>("save", function (next): void {
   this.fullName = `${this.firstName} ${this.lastName}`;
   next();
@@ -106,6 +140,24 @@ userSchema.methods.generateAuthToken = function (): string {
 
   return jwt.sign(payload, config.get("jwtPrivateKey"));
 };
+
+userSchema.methods.validatePassword = async function (
+  currentPassword: string,
+  inputtedPassword: string
+): Promise<boolean> {
+  const validPassword: boolean = await bcrypt.compare(
+    inputtedPassword,
+    currentPassword
+  );
+
+  return validPassword;
+};
+
+const UserModel: IUserModel = mongoose.model<IUser, IUserModel>(
+  "User",
+  userSchema
+);
+export default UserModel;
 
 export const validate = (user: object): ValidationResult => {
   const schema: Joi.ObjectSchema<IUser> = Joi.object({
@@ -127,5 +179,3 @@ export const validate = (user: object): ValidationResult => {
 
   return schema.validate(user);
 };
-
-export default mongoose.model<IUser>("User", userSchema);
