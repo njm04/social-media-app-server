@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from "express";
-import User, { IUser } from "../models/user";
+import User from "../models/user";
+import { IUser } from "../interfaces/user";
 import mongoose from "mongoose";
 
 const router: Router = express.Router();

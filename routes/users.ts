@@ -1,7 +1,8 @@
 import express, { Router, Request, Response } from "express";
 import _ from "lodash";
 import bcrypt from "bcryptjs";
-import User, { IUser, validate } from "../models/user";
+import User, { validate } from "../models/user";
+import { IUser } from "../interfaces/user";
 import Image from "../models/image";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
