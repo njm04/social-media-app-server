@@ -6,8 +6,10 @@ import { IProfPic } from "../interfaces/user";
 interface IImageModel extends Model<IUploadImage> {
   saveImage: (
     imageData: IProfPic,
-    userId: mongoose.Types.ObjectId
+    userId: mongoose.Types.ObjectId,
+    postId?: mongoose.Types.ObjectId
   ) => Promise<void>;
+  findAllImages: () => Promise<IUploadImage[]>;
 }
 
 const Schema = mongoose.Schema;
@@ -25,10 +27,20 @@ const imageSchema = new Schema({
 
 imageSchema.statics.saveImage = async function (
   imageData: IProfPic,
-  userId: mongoose.Types.ObjectId
+  userId: mongoose.Types.ObjectId,
+  postId?: mongoose.Types.ObjectId
 ): Promise<void> {
-  const image = new ImageModel({ imageData, userId });
-  await image.save();
+  if (!postId) {
+    const image = new ImageModel({ imageData, userId });
+    await image.save();
+  } else {
+    const image = new ImageModel({ imageData, postId, userId });
+    await image.save();
+  }
+};
+
+imageSchema.statics.findAllImages = async function (): Promise<IUploadImage[]> {
+  return await this.find({}).select("-__v -imageData._id");
 };
 
 const ImageModel: IImageModel = mongoose.model<IUploadImage, IImageModel>(
