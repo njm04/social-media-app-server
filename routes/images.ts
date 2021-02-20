@@ -6,6 +6,7 @@ import User from "../models/user";
 
 const router: Router = Router();
 
+// this route has not been used from the frontend
 router.post("/", [auth], async (req: Request, res: Response) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -27,7 +28,7 @@ router.post("/", [auth], async (req: Request, res: Response) => {
   }
 });
 
-// prepared for future use.
+// this route has not been used from the frontend
 router.patch(
   "/:id",
   [auth, validateObjectId],
@@ -45,16 +46,8 @@ router.patch(
   }
 );
 
-// router.post("/", auth, async (req: Request, res: Response) => {
-//   const images = await Image.findById(req.body.postImagesId).select(
-//     "-__v -imageData._id"
-//   );
-
-//   res.send(images);
-// });
-
 router.get("/", auth, async (req: Request, res: Response) => {
-  const images = await Image.find({}).select("-__v -imageData._id");
+  const images = await Image.findAllImages();
   res.send(images);
 });
 
