@@ -1,7 +1,8 @@
 import { Router, Request, Response } from "express";
+import mongoose from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import _ from "lodash";
-import Post, { IPost, validate } from "../models/post";
+import Post, { validate } from "../models/post";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
 import User from "../models/user";
@@ -14,29 +15,19 @@ router.post("/", auth, async (req: Request, res: Response) => {
   const { error } = validate(_.pick(req.body, ["postedBy", "post"]));
   if (error) return res.status(400).send(error.details[0].message);
 
-  const user = await User.findById(req.body.postedBy);
+  const user = await User.findUserById(req.body.postedBy);
   if (!user) return res.status(400).send("Invalid user");
 
   try {
-    const post: IPost = new Post({
-      post: req.body.post,
-      postedBy: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        fullName: user.fullName,
-      },
+    const post = Post.createPost(user._id, req.body.imageData, {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: user.fullName,
     });
 
-    const images = new Images({
-      imageData: req.body.imageData,
-      postId: post._id,
-      userId: user._id,
-    });
-    post.postImages = req.body.imageData;
-
+    await Images.saveImage(req.body.imageData, user._id, post._id);
     await post.save();
-    await images.save();
 
     res.send(post);
   } catch (error) {
@@ -49,10 +40,10 @@ router.post("/like", auth, async (req: Request, res: Response) => {
   const { error } = validateIds(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const user = await User.findById(req.body.userId);
+  const user = await User.findUserById(req.body.userId);
   if (!user) return res.status(400).send("Invalid user");
 
-  let post = await Post.findById(req.body.postId);
+  let post = await Post.findPostById(req.body.postId);
   if (!post) return res.status(400).send("Invalid post");
 
   const likeInfo = await Like.findOne({
@@ -64,13 +55,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
    * Like and unlike logic
    */
   if (!likeInfo) {
-    post = await Post.findByIdAndUpdate(
-      req.body.postId,
-      {
-        $inc: { likes: 1 },
-      },
-      { new: true }
-    );
+    post = await Post.findPostByIdAndUpdateLikes(req.body.postId, { likes: 1 });
     if (!post) return res.status(400).send("Invalid post");
 
     return res.send(post);
@@ -80,13 +65,9 @@ router.post("/like", auth, async (req: Request, res: Response) => {
       userId: user._id,
     });
     if (deleted.ok === 1 && post.likes > 0) {
-      post = await Post.findByIdAndUpdate(
-        req.body.postId,
-        {
-          $inc: { likes: -1 },
-        },
-        { new: true }
-      );
+      post = await Post.findPostByIdAndUpdateLikes(req.body.postId, {
+        likes: -1,
+      });
       if (!post) return res.status(400).send("Invalid post");
 
       return res.send(post);
@@ -95,18 +76,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const posts = await Post.aggregate([
-    {
-      $lookup: {
-        from: "comments",
-        let: { post: "$_id" },
-        pipeline: [{ $match: { $expr: { $eq: ["$$post", "$post"] } } }],
-        as: "commentCount",
-      },
-    },
-    { $addFields: { commentCount: { $size: "$commentCount" } } },
-  ]);
-
+  const posts = await Post.aggregateCommentCount();
   res.send(posts);
 });
 
@@ -114,10 +84,12 @@ router.delete(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findPostById(
+      mongoose.Types.ObjectId(req.params.id)
+    );
     if (!post) return res.status(400).send("Post not found");
 
-    const deleted = await Post.deleteOne({ _id: post._id });
+    const deleted = await Post.deleteOnePost(post._id);
     if (deleted.ok !== 1) return res.status(400).send("Unable to delete");
     await Like.deleteOne({ postId: post._id });
     res.send(post);
@@ -128,14 +100,11 @@ router.patch(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const options = { new: true };
-
     if (!req.body.newPost) return res.status(400).send("empty post");
 
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      { post: req.body.newPost },
-      options
+    const post = await Post.findPostByIdAndUpdate(
+      mongoose.Types.ObjectId(req.params.id),
+      req.body.newPost
     );
     if (!post) return res.status(400).send("Invalid post");
     res.send(post);

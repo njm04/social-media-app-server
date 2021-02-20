@@ -1,18 +1,24 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
+import { IPost, IPostedBy } from "../interfaces/post";
 
-interface IPostedBy {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-}
-
-export interface IPost extends Document {
-  post: string;
-  postedBy: IPostedBy; // string type also works
-  likes: number;
-  postImages: object[];
+interface IPostModel extends Model<IPost> {
+  createPost: (
+    id: mongoose.Types.ObjectId,
+    imageData: object[],
+    postedBy: IPostedBy
+  ) => IPost;
+  findPostById: (id: mongoose.Types.ObjectId) => Promise<IPost>;
+  findPostByIdAndUpdateLikes: (
+    id: mongoose.Types.ObjectId,
+    inc: object
+  ) => Promise<IPost>;
+  aggregateCommentCount: () => Promise<any[]>;
+  deleteOnePost: (id: mongoose.Types.ObjectId) => Promise<any>;
+  findPostByIdAndUpdate: (
+    id: mongoose.Types.ObjectId,
+    post: string
+  ) => Promise<IPost>;
 }
 
 const Schema = mongoose.Schema;
@@ -33,6 +39,67 @@ const postSchema: mongoose.Schema<IPost> = new Schema(
   { timestamps: true }
 );
 
+postSchema.statics.createPost = function (
+  id: mongoose.Types.ObjectId,
+  imageData: object[],
+  postedBy: IPostedBy
+): IPost {
+  const post = new PostModel({
+    _id: id,
+    postedBy,
+  });
+
+  post.postImages = imageData;
+  return post;
+};
+
+postSchema.statics.findPostById = async function (
+  id: mongoose.Types.ObjectId
+): Promise<IPost> {
+  return await this.findById(id);
+};
+
+postSchema.statics.findPostByIdAndUpdateLikes = async function (
+  id: mongoose.Types.ObjectId,
+  inc: object
+): Promise<IPost> {
+  return await this.findByIdAndUpdate(id, { $inc: inc }, { new: true });
+};
+
+postSchema.statics.aggregateCommentCount = async function (): Promise<any[]> {
+  return await this.aggregate([
+    {
+      $lookup: {
+        from: "comments",
+        let: { post: "$_id" },
+        pipeline: [{ $match: { $expr: { $eq: ["$$post", "$post"] } } }],
+        as: "commentCount",
+      },
+    },
+    { $addFields: { commentCount: { $size: "$commentCount" } } },
+  ]);
+};
+
+postSchema.statics.findPostByIdAndUpdate = async function (
+  id: mongoose.Types.ObjectId,
+  post: string
+): Promise<IPost> {
+  const options = { new: true };
+  return await this.findByIdAndUpdate(id, { post }, options);
+};
+
+postSchema.statics.deleteOnePost = async function (
+  id: mongoose.Types.ObjectId
+): Promise<any> {
+  return await this.deleteOne({ _id: id });
+};
+
+const PostModel: IPostModel = mongoose.model<IPost, IPostModel>(
+  "Post",
+  postSchema
+);
+export default PostModel;
+
 export const validate = (post: object): ValidationResult => {
   const schema: Joi.ObjectSchema<IPost> = Joi.object({
     post: Joi.string().required().allow(""),
@@ -41,5 +108,3 @@ export const validate = (post: object): ValidationResult => {
 
   return schema.validate(post);
 };
-
-export default mongoose.model<IPost>("Post", postSchema);
