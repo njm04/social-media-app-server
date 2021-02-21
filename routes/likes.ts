@@ -10,22 +10,17 @@ router.post("/", auth, async (req: Request, res: Response) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const user = await User.findById(req.body.userId);
+  const user = await User.findUserById(req.body.userId);
   if (!user) return res.status(400).send("Invalid user");
 
-  const post = await Post.findById(req.body.postId);
+  const post = await Post.findPostById(req.body.postId);
   if (!post) return res.status(400).send("Invalid post");
 
-  const like = await Like.findOne({ postId: post._id, userId: user._id });
+  const like = await Like.findOneLikeByPostIdAndUserId(post._id, user._id);
   if (like) return res.send(like);
   else {
     try {
-      const like = new Like({
-        userId: user._id,
-        postId: post._id,
-        likesCount: 1,
-      });
-
+      const like = Like.createLike(user._id, post._id);
       await like.save();
       res.send(like);
     } catch (error) {
@@ -36,10 +31,11 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const likes = await Like.find({}).select("-__v");
+  const likes = await Like.findAllLikes();
   res.send(likes);
 });
 
+// this route has not been used yet
 router.delete("/", auth, async (req: Request, res: Response) => {
   const user = await User.findById(req.body.userId);
   if (!user) return res.status(400).send("Invalid user");

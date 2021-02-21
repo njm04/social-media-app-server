@@ -19,7 +19,7 @@ router.post("/", auth, async (req: Request, res: Response) => {
   if (!user) return res.status(400).send("Invalid user");
 
   try {
-    const post = Post.createPost(user._id, req.body.imageData, {
+    const post = Post.createPost(user._id, req.body.post, req.body.imageData, {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -46,11 +46,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
   let post = await Post.findPostById(req.body.postId);
   if (!post) return res.status(400).send("Invalid post");
 
-  const likeInfo = await Like.findOne({
-    postId: post._id,
-    userId: user._id,
-  });
-
+  const likeInfo = await Like.findOneLikeByPostIdAndUserId(post._id, user._id);
   /**
    * Like and unlike logic
    */
@@ -60,10 +56,7 @@ router.post("/like", auth, async (req: Request, res: Response) => {
 
     return res.send(post);
   } else {
-    const deleted = await Like.deleteOne({
-      postId: post._id,
-      userId: user._id,
-    });
+    const deleted = await Like.deleteOneLike(post._id, user._id);
     if (deleted.ok === 1 && post.likes > 0) {
       post = await Post.findPostByIdAndUpdateLikes(req.body.postId, {
         likes: -1,
@@ -91,7 +84,7 @@ router.delete(
 
     const deleted = await Post.deleteOnePost(post._id);
     if (deleted.ok !== 1) return res.status(400).send("Unable to delete");
-    await Like.deleteOne({ postId: post._id });
+    await Like.deletePostLikes(post._id);
     res.send(post);
   }
 );
