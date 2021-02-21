@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
+import mongoose from "mongoose";
 import _ from "lodash";
-import Comment, { IComment, validate } from "../models/comment";
+import Comment, { validate } from "../models/comment";
+import { IComment } from "../interfaces/comments";
 import User from "../models/user";
 import Post from "../models/post";
 import { IPost } from "../interfaces/post";
@@ -15,24 +17,16 @@ router.post("/", auth, async (req: Request, res: Response) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const user = await User.findById(req.body.userId);
+  const user = await User.findUserById(req.body.userId);
   if (!user) return res.status(400).send("Invalid user");
 
-  const post = await Post.findById(req.body.post);
+  const post = await Post.findPostById(req.body.post);
   if (!post) return res.status(400).send("Invalid post");
 
   try {
-    const comment: IComment = new Comment(
-      _.pick(req.body, ["post", "comment", "userId"])
-    );
-    comment.createdBy = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.fullName,
-    };
-
+    const comment = Comment.createComment(req.body, user);
     await comment.save();
+
     let count = await CommentCount.findOne({ postId: post._id });
     if (!count) {
       count = new CommentCount({
@@ -58,15 +52,11 @@ router.get(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const post: IPost | null = await Post.findById(req.params.id);
+    const postId = mongoose.Types.ObjectId(req.params.id);
+    const post = await Post.findPostById(postId);
     if (!post) return res.status(400).send("Invalid post");
 
-    const comments: IComment[] = await Comment.find({
-      post: post._id,
-    }).select("-__v -updatedAt");
-    // if (!comments || comments.length === 0)
-    //   return res.status(400).send("No comments found");
-
+    const comments = await Comment.findCommentsByPostId(post._id);
     res.send(comments);
   }
 );
@@ -81,7 +71,8 @@ router.delete(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const comment = await Comment.findOneAndDelete({ _id: req.params.id });
+    const id = mongoose.Types.ObjectId(req.params.id);
+    const comment = await Comment.findOneCommentAndDelete(id);
     if (!comment) return res.status(400).send("Invalid comment");
 
     res.send(comment);
@@ -92,14 +83,12 @@ router.patch(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const options = { new: true };
-
+    const id = mongoose.Types.ObjectId(req.params.id);
     if (!req.body.updatedComment) return res.status(400).send("empty comment");
 
-    const comment = await Comment.findByIdAndUpdate(
-      req.params.id,
-      { comment: req.body.updatedComment },
-      options
+    const comment = await Comment.findCommentByIdAndUpdate(
+      id,
+      req.body.updatedComment
     );
     if (!comment) return res.status(400).send("Invalid comment");
     res.send(comment);
