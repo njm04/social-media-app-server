@@ -2,10 +2,8 @@ import { Router, Request, Response } from "express";
 import mongoose from "mongoose";
 import _ from "lodash";
 import Comment, { validate } from "../models/comment";
-import { IComment } from "../interfaces/comments";
 import User from "../models/user";
 import Post from "../models/post";
-import { IPost } from "../interfaces/post";
 import CommentCount from "../models/commentCount";
 import auth from "../middlewares/auth";
 import Joi, { ValidationResult } from "joi";
@@ -27,18 +25,11 @@ router.post("/", auth, async (req: Request, res: Response) => {
     const comment = Comment.createComment(req.body, user);
     await comment.save();
 
-    let count = await CommentCount.findOne({ postId: post._id });
+    let count = await CommentCount.findOneCommentCount(post._id);
     if (!count) {
-      count = new CommentCount({
-        postId: post._id,
-      });
-      count.count += 1;
-      await count.save();
+      await CommentCount.saveCommentCount(post._id);
     } else {
-      await CommentCount.updateOne(
-        { postId: post._id },
-        { $inc: { count: 1 } }
-      );
+      await CommentCount.findOneCommentCountAndIncrement(post._id);
     }
 
     res.send(comment);
@@ -61,9 +52,9 @@ router.get(
   }
 );
 
+// this route has not been used yet
 router.get("/", auth, async (req: Request, res: Response) => {
   const commentsCount = await CommentCount.find({});
-  console.log(commentsCount);
   res.send(commentsCount.length > 0 && commentsCount);
 });
 
@@ -74,6 +65,8 @@ router.delete(
     const id = mongoose.Types.ObjectId(req.params.id);
     const comment = await Comment.findOneCommentAndDelete(id);
     if (!comment) return res.status(400).send("Invalid comment");
+
+    await CommentCount.findOneCommentCountAndDecrement(comment.post);
 
     res.send(comment);
   }
