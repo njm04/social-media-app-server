@@ -17,6 +17,12 @@ router.get("/", auth, async (req: Request, res: Response) => {
   res.send(friends);
 });
 
+router.get("/accepted", auth, async (req: Request, res: Response) => {
+  const { _id: userId } = (req as any).user;
+  const friends = await FriendRequest.findFriendsById(userId);
+  res.send(friends);
+});
+
 router.get(
   "/friend-request-notification",
   auth,
