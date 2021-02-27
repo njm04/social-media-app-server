@@ -2,11 +2,14 @@ import mongoose, { Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import { pick } from "lodash";
 import { IFriendRequest } from "../interfaces/friendRequest";
+import User from "./user";
+import { IUser } from "../interfaces/user";
 
 interface IFriendRequestModel extends Model<IFriendRequest> {
   findRequestsByRequesterOrRecipient: (
     userId: mongoose.Types.ObjectId
   ) => Promise<IFriendRequest[]>;
+  findFriendsById: (userId: mongoose.Types.ObjectId) => Promise<IUser[]>;
   findRequestsByRecipient: (
     userId: mongoose.Types.ObjectId
   ) => Promise<IFriendRequest[]>;
@@ -43,6 +46,25 @@ friendRequestSchema.statics.findRequestsByRequesterOrRecipient = async function 
     $or: [{ requester: userId }, { recipient: userId }],
     status: { $ne: "rejected" },
   }).select("-__v");
+};
+
+friendRequestSchema.statics.findFriendsById = async function (
+  userId: mongoose.Types.ObjectId
+): Promise<IUser[]> {
+  const friends = await this.find({
+    $or: [{ requester: userId }, { recipient: userId }],
+    status: "accepted",
+  }).select("-__v");
+
+  return await Promise.all(
+    friends.map(async (friend: IFriendRequest) => {
+      return await User.findOneUserById(
+        userId,
+        friend.requester,
+        friend.recipient
+      );
+    })
+  );
 };
 
 friendRequestSchema.statics.findRequestsByRecipient = async function (
