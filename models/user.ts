@@ -26,6 +26,11 @@ interface IUserModel extends Model<IUser> {
   findBySearchQuery: (searchQuery: string) => Promise<IUser[]>;
   findAllUsers: () => Promise<IUser[]>;
   findUserById: (id: mongoose.Types.ObjectId) => Promise<IUser>;
+  findOneUserById: (
+    id: mongoose.Types.ObjectId,
+    requester: mongoose.Types.ObjectId,
+    recipient: mongoose.Types.ObjectId
+  ) => Promise<IUser>;
 }
 
 const Schema = mongoose.Schema;
@@ -137,6 +142,17 @@ userSchema.statics.findUserById = async function (
   id: mongoose.Types.ObjectId
 ): Promise<IUser> {
   return await this.findById(id);
+};
+
+userSchema.statics.findOneUserById = async function (
+  id: mongoose.Types.ObjectId,
+  requester: mongoose.Types.ObjectId,
+  recipient: mongoose.Types.ObjectId
+): Promise<IUser> {
+  return await this.findOne({
+    $or: [{ _id: requester }, { _id: recipient }],
+    _id: { $ne: id },
+  }).select("_id fullName profilePicture status");
 };
 
 userSchema.methods.generateAuthToken = async function (): Promise<string> {
