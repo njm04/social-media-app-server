@@ -13,12 +13,12 @@ export interface IUser extends Document {
   gender: string;
   birthDate: string;
   age?: number;
-  contactNumber: string;
-  address: string;
+  contactNumber?: string;
+  address?: string;
   addressTwo?: string;
-  state: string;
-  city: string;
-  zip: string;
+  state?: string;
+  city?: string;
+  zip?: string;
   status: string;
   password: string;
   friends?: string[];

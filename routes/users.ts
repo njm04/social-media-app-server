@@ -36,7 +36,7 @@ router.post("/register", async (req: Request, res: Response) => {
         "status",
         "contactNumber",
         "address",
-        "addressTwo?",
+        "addressTwo",
         "state",
         "city",
         "zip",

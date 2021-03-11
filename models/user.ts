@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "config";
 import { IUser, ItokenPayload } from "../interfaces/user";
+import moment from "moment";
 // import joiObjectId from "joi-objectid";
 // const myJoiObjectId = joiObjectId(Joi);
 
@@ -44,12 +45,12 @@ const userSchema: mongoose.Schema<IUser> = new Schema(
     gender: { type: String, required: true },
     birthDate: { type: Date, required: true, default: Date.now },
     age: { type: Number },
-    contactNumber: { type: String, required: true },
-    address: { type: String, require: true },
+    contactNumber: { type: String, default: "" },
+    address: { type: String, default: "" },
     addressTwo: { type: String, default: "" },
-    state: { type: String, required: true },
-    city: { type: String, required: true },
-    zip: { type: String, required: true },
+    state: { type: String, default: "" },
+    city: { type: String, default: "" },
+    zip: { type: String, default: "" },
     status: {
       type: String,
       required: true,
@@ -184,6 +185,11 @@ userSchema.methods.validatePassword = async function (
   return validPassword;
 };
 
+userSchema.pre<IUser>("save", function (next) {
+  this.age = moment().diff(this.birthDate, "years");
+  next();
+});
+
 const UserModel: IUserModel = mongoose.model<IUser, IUserModel>(
   "User",
   userSchema
@@ -196,14 +202,14 @@ export const validate = (user: object): ValidationResult => {
     firstName: Joi.string().required(),
     lastName: Joi.string().required(),
     birthDate: Joi.date().required(),
-    contactNumber: Joi.string().min(10).max(20).required(),
+    contactNumber: Joi.string().min(10).max(20).optional(),
     gender: Joi.string().required(),
     password: Joi.string().min(5).max(1000).required(),
-    address: Joi.string().min(3).max(255).required(),
-    state: Joi.string().max(255).required(),
+    address: Joi.string().min(3).max(255).optional(),
+    state: Joi.string().max(255).optional(),
     addressTwo: Joi.string().max(10).optional().allow(""),
-    city: Joi.string().min(3).max(255).required(),
-    zip: Joi.string().min(6).max(255).required(),
+    city: Joi.string().min(3).max(255).optional(),
+    zip: Joi.string().min(6).max(255).optional(),
     status: Joi.string().required(),
     isDeleted: Joi.boolean(),
   });
