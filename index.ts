@@ -5,6 +5,8 @@ const app: Application = express();
 require("./startup/logging")();
 require("./startup/routes")(app);
 require("./startup/db")();
+require("./startup/config")();
+require("./startup/prod")(app);
 
 const PORT: string | number = process.env.PORT || 3001;
 const server: object = app.listen(
