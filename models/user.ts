@@ -210,7 +210,7 @@ export const validate = (user: object): ValidationResult => {
     addressTwo: Joi.string().max(10).optional().allow(""),
     city: Joi.string().min(3).max(255).optional(),
     zip: Joi.string().min(6).max(255).optional(),
-    status: Joi.string().required(),
+    status: Joi.string(),
     isDeleted: Joi.boolean(),
   });
 
