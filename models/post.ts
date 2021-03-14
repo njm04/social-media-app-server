@@ -4,7 +4,6 @@ import { IPost, IPostedBy } from "../interfaces/post";
 
 interface IPostModel extends Model<IPost> {
   createPost: (
-    id: mongoose.Types.ObjectId,
     postString: string,
     imageData: object[],
     postedBy: IPostedBy
@@ -41,13 +40,11 @@ const postSchema: mongoose.Schema<IPost> = new Schema(
 );
 
 postSchema.statics.createPost = function (
-  id: mongoose.Types.ObjectId,
   postString: string,
   imageData: object[],
   postedBy: IPostedBy
 ): IPost {
   const post = new PostModel({
-    _id: id,
     post: postString,
     postedBy,
   });

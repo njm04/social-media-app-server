@@ -19,7 +19,7 @@ router.post("/", auth, async (req: Request, res: Response) => {
   if (!user) return res.status(400).send("Invalid user");
 
   try {
-    const post = Post.createPost(user._id, req.body.post, req.body.imageData, {
+    const post = Post.createPost(req.body.post, req.body.imageData, {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
