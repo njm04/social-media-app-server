@@ -1,4 +1,5 @@
 {
   "jwtPrivateKey": "social_medial_jwtPrivateKey",
-  "ATLAS_DB": "social_media_ATLAS_DB"
+  "ATLAS_DB": "social_media_ATLAS_DB",
+  "NODE_ENV": "social_media_NODE_ENV"
 }
