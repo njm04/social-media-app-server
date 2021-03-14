@@ -2,7 +2,7 @@
   "name": "social-media-app-server",
   "version": "1.0.0",
   "description": "facebook clone",
-  "main": "dist/index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "node dist/index.js",
     "start-dev": "ts-node-dev --respawn index.ts",
