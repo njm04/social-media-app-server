@@ -125,9 +125,7 @@ userSchema.statics.findBySearchQuery = async function (
 ): Promise<IUser[]> {
   return await this.find({
     fullName: { $regex: searchQuery, $options: "i" },
-  })
-    .select("_id fullName profilePicture")
-    .limit(10);
+  }).select("_id fullName profilePicture");
 };
 
 userSchema.statics.findAllUsers = async function (): Promise<IUser[]> {
