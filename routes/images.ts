@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import mongoose from "mongoose";
 import Image, { validate } from "../models/image";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
@@ -49,6 +50,14 @@ router.patch(
 router.get("/", auth, async (req: Request, res: Response) => {
   const images = await Image.findAllImages();
   res.send(images);
+});
+
+router.delete("/:postId", auth, async (req: Request, res: Response) => {
+  const image = await Image.findOneImageDataAndDelete(
+    mongoose.Types.ObjectId(req.params.postId)
+  );
+  if (!image) return res.status(400).send("Unable to delete");
+  res.send(image);
 });
 
 export = router;

@@ -10,6 +10,9 @@ interface IImageModel extends Model<IUploadImage> {
     postId?: mongoose.Types.ObjectId
   ) => Promise<void>;
   findAllImages: () => Promise<IUploadImage[]>;
+  findOneImageDataAndDelete: (
+    postId: mongoose.Types.ObjectId
+  ) => Promise<IUploadImage>;
 }
 
 const Schema = mongoose.Schema;
@@ -41,6 +44,14 @@ imageSchema.statics.saveImage = async function (
 
 imageSchema.statics.findAllImages = async function (): Promise<IUploadImage[]> {
   return await this.find({}).select("-__v -imageData._id");
+};
+
+imageSchema.statics.findOneImageDataAndDelete = async function (
+  postId: mongoose.Types.ObjectId
+): Promise<IUploadImage> {
+  return await this.findOneAndDelete({
+    postId,
+  }).select("-__v");
 };
 
 const ImageModel: IImageModel = mongoose.model<IUploadImage, IImageModel>(
