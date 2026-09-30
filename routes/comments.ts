@@ -6,7 +6,6 @@ import User from "../models/user";
 import Post from "../models/post";
 import CommentCount from "../models/commentCount";
 import auth from "../middlewares/auth";
-import Joi, { ValidationResult } from "joi";
 import validateObjectId from "../middlewares/validateObjectId";
 
 const router: Router = Router();
@@ -43,7 +42,7 @@ router.get(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const postId = mongoose.Types.ObjectId(req.params.id);
+    const postId = new mongoose.Types.ObjectId(req.params.id);
     const post = await Post.findPostById(postId);
     if (!post) return res.status(400).send("Invalid post");
 
@@ -53,7 +52,7 @@ router.get(
 );
 
 // this route has not been used yet
-router.get("/", auth, async (req: Request, res: Response) => {
+router.get("/", auth, async (_req: Request, res: Response) => {
   const commentsCount = await CommentCount.find({});
   res.send(commentsCount.length > 0 && commentsCount);
 });
@@ -62,7 +61,7 @@ router.delete(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const id = mongoose.Types.ObjectId(req.params.id);
+    const id = new mongoose.Types.ObjectId(req.params.id);
     const comment = await Comment.findOneCommentAndDelete(id);
     if (!comment) return res.status(400).send("Invalid comment");
 
@@ -76,7 +75,7 @@ router.patch(
   "/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const id = mongoose.Types.ObjectId(req.params.id);
+    const id = new mongoose.Types.ObjectId(req.params.id);
     if (!req.body.updatedComment) return res.status(400).send("empty comment");
 
     const comment = await Comment.findCommentByIdAndUpdate(
@@ -87,13 +86,5 @@ router.patch(
     res.send(comment);
   }
 );
-
-const validatePostId = (id: object): ValidationResult => {
-  const schema: Joi.ObjectSchema = Joi.object({
-    postId: Joi.string().required(),
-  });
-
-  return schema.validate(id);
-};
 
 export = router;

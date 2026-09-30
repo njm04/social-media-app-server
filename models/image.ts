@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import { IUploadImage } from "../interfaces/image";
 import { IProfPic } from "../interfaces/user";
@@ -9,7 +9,7 @@ interface IImageModel extends Model<IUploadImage> {
     userId: mongoose.Types.ObjectId,
     postId?: mongoose.Types.ObjectId
   ) => Promise<void>;
-  findAllImages: () => Promise<IUploadImage[]>;
+  findAllImages: (skip: number, limit: number) => Promise<IUploadImage[]>;
   findOneImageDataAndDelete: (
     postId: mongoose.Types.ObjectId
   ) => Promise<IUploadImage>;
@@ -42,8 +42,14 @@ imageSchema.statics.saveImage = async function (
   }
 };
 
-imageSchema.statics.findAllImages = async function (): Promise<IUploadImage[]> {
-  return await this.find({}).select("-__v -imageData._id");
+imageSchema.statics.findAllImages = async function (
+  skip: number,
+  limit: number
+): Promise<IUploadImage[]> {
+  return await this.find({})
+    .select("-__v -imageData._id")
+    .skip(skip)
+    .limit(limit);
 };
 
 imageSchema.statics.findOneImageDataAndDelete = async function (

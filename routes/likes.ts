@@ -3,6 +3,7 @@ import Like, { validate } from "../models/like";
 import Post from "../models/post";
 import User from "../models/user";
 import auth from "../middlewares/auth";
+import getPagination from "../utils/pagination";
 
 const router: Router = Router();
 
@@ -31,7 +32,8 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const likes = await Like.findAllLikes();
+  const { skip, limit } = getPagination(req);
+  const likes = await Like.findAllLikes(skip, limit);
   res.send(likes);
 });
 

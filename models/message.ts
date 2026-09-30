@@ -1,8 +1,6 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import { IMessage } from "../interfaces/message";
-
-interface IMessageModel extends Model<IMessage> {}
 
 const Schema = mongoose.Schema;
 

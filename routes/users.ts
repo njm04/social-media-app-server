@@ -1,4 +1,4 @@
-import express, { Router, Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import mongoose from "mongoose";
 import _ from "lodash";
 import bcrypt from "bcryptjs";
@@ -7,8 +7,10 @@ import { IUser } from "../interfaces/user";
 import Image from "../models/image";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
+import rateLimit from "../middlewares/rateLimit";
+import getPagination from "../utils/pagination";
 
-const router: Router = express.Router();
+const router: Router = Router();
 
 router.get("/me", auth, async (req: Request, res: Response) => {
   const user: IUser | null = await User.findById((req as any).user._id).select(
@@ -17,7 +19,7 @@ router.get("/me", auth, async (req: Request, res: Response) => {
   res.send(user);
 });
 
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", rateLimit, async (req: Request, res: Response) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -56,7 +58,7 @@ router.patch(
   "/update-profile-picture/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const id = mongoose.Types.ObjectId(req.params.id);
+    const id = new mongoose.Types.ObjectId(req.params.id);
     const user = await User.findByIdAndUpdatePhoto(
       id,
       req.body.name,
@@ -80,7 +82,7 @@ router.patch(
   "/update-cover-photo/:id",
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
-    const id = mongoose.Types.ObjectId(req.params.id);
+    const id = new mongoose.Types.ObjectId(req.params.id);
     const user = await User.findByIdAndUpdatePhoto(
       id,
       req.body.name,
@@ -114,7 +116,8 @@ router.get(
 );
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  res.send(await User.findAllUsers());
+  const { skip, limit } = getPagination(req);
+  res.send(await User.findAllUsers(skip, limit));
 });
 
 export = router;

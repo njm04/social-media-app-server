@@ -4,6 +4,7 @@ import Image, { validate } from "../models/image";
 import auth from "../middlewares/auth";
 import validateObjectId from "../middlewares/validateObjectId";
 import User from "../models/user";
+import getPagination from "../utils/pagination";
 
 const router: Router = Router();
 
@@ -48,13 +49,14 @@ router.patch(
 );
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const images = await Image.findAllImages();
+  const { skip, limit } = getPagination(req);
+  const images = await Image.findAllImages(skip, limit);
   res.send(images);
 });
 
 router.delete("/:postId", auth, async (req: Request, res: Response) => {
   const image = await Image.findOneImageDataAndDelete(
-    mongoose.Types.ObjectId(req.params.postId)
+    new mongoose.Types.ObjectId(req.params.postId)
   );
   if (!image) return res.status(400).send("Unable to delete");
   res.send(image);

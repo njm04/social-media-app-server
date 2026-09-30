@@ -8,6 +8,7 @@ import validateObjectId from "../middlewares/validateObjectId";
 import User from "../models/user";
 import Images from "../models/image";
 import Like from "../models/like";
+import getPagination from "../utils/pagination";
 
 const router: Router = Router();
 
@@ -69,7 +70,8 @@ router.post("/like", auth, async (req: Request, res: Response) => {
 });
 
 router.get("/", auth, async (req: Request, res: Response) => {
-  const posts = await Post.aggregateCommentCount();
+  const { skip, limit } = getPagination(req);
+  const posts = await Post.aggregateCommentCount(skip, limit);
   res.send(posts);
 });
 
@@ -78,7 +80,7 @@ router.delete(
   [auth, validateObjectId],
   async (req: Request, res: Response) => {
     const post = await Post.findPostById(
-      mongoose.Types.ObjectId(req.params.id)
+      new mongoose.Types.ObjectId(req.params.id)
     );
     if (!post) return res.status(400).send("Post not found");
 
@@ -96,7 +98,7 @@ router.patch(
     if (!req.body.newPost) return res.status(400).send("empty post");
 
     const post = await Post.findPostByIdAndUpdate(
-      mongoose.Types.ObjectId(req.params.id),
+      new mongoose.Types.ObjectId(req.params.id),
       req.body.newPost
     );
     if (!post) return res.status(400).send("Invalid post");
