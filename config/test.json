@@ -1,0 +1,4 @@
+{
+  "jwtPrivateKey": "test-only-jwt-secret",
+  "ATLAS_DB": "mongodb://127.0.0.1/social-media-app-test"
+}

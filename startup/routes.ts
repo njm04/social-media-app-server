@@ -9,6 +9,7 @@ import images from "../routes/images";
 import likes from "../routes/likes";
 import sanitize from "../middlewares/sanitize";
 import errorMiddleware from "../middlewares/error";
+import setupDocs from "./docs";
 
 const corsOptions = {
   exposedHeaders: "x-auth-token",
@@ -18,6 +19,7 @@ module.exports = (app: Application): void => {
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(sanitize);
+  setupDocs(app);
   app.use("/api/auth", auth);
   app.use("/api/users", users);
   app.use("/api/posts", posts);
