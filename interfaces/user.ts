@@ -11,7 +11,7 @@ export interface IUser extends Document {
   lastName: string;
   fullName: string;
   gender: string;
-  birthDate: string;
+  birthDate: Date;
   age?: number;
   contactNumber?: string;
   address?: string;
@@ -22,6 +22,7 @@ export interface IUser extends Document {
   status: string;
   password: string;
   friends?: string[];
+  isDeleted?: boolean;
   profilePicture: IProfPic;
   coverPhoto: IProfPic;
   generateAuthToken: () => Promise<string>;

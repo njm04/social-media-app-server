@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import { ICommentCount } from "../interfaces/commentCount";
 

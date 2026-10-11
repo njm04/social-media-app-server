@@ -4,7 +4,6 @@ import _ from "lodash";
 import FriendRequest, {
   validate as validateFriendRequest,
 } from "../models/friendRequest";
-import { IFriendRequest } from "../interfaces/friendRequest";
 import auth from "../middlewares/auth";
 
 const router: Router = Router();
@@ -55,15 +54,14 @@ router.post("/", auth, async (req: Request, res: Response) => {
 });
 
 router.delete("/:id", auth, async (req: Request, res: Response) => {
-  const id = mongoose.Types.ObjectId(req.params.id);
+  const id = new mongoose.Types.ObjectId(req.params.id);
   const friend = await FriendRequest.findOneRequestAndDelete(id);
   if (!friend) return res.status(400).send("Unable to delete");
   res.send(friend);
 });
 
 router.patch("/:id", auth, async (req: Request, res: Response) => {
-  const options = { new: true };
-  const id = mongoose.Types.ObjectId(req.params.id);
+  const id = new mongoose.Types.ObjectId(req.params.id);
   if (!req.body.status) return res.status(400).send("Invalid status");
   const friendRequest = await FriendRequest.findRequestByIdAndUpdate(
     id,

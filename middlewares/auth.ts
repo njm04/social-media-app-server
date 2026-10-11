@@ -9,7 +9,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
   try {
     const decoded: string | object = jwt.verify(
       token,
-      config.get("jwtPrivateKey")
+      config.get<string>("jwtPrivateKey")
     );
     // TODO: figure out how to create a new value within req without using type any
     (req as any).user = decoded;

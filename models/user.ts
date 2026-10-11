@@ -1,13 +1,11 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
-import { pick } from "lodash";
+import { escapeRegExp } from "lodash";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "config";
 import { IUser, ItokenPayload } from "../interfaces/user";
 import moment from "moment";
-// import joiObjectId from "joi-objectid";
-// const myJoiObjectId = joiObjectId(Joi);
 
 // static methods
 interface IUserModel extends Model<IUser> {
@@ -25,7 +23,7 @@ interface IUserModel extends Model<IUser> {
     type: string
   ) => Promise<IUser>;
   findBySearchQuery: (searchQuery: string) => Promise<IUser[]>;
-  findAllUsers: () => Promise<IUser[]>;
+  findAllUsers: (skip: number, limit: number) => Promise<IUser[]>;
   findUserById: (id: mongoose.Types.ObjectId) => Promise<IUser>;
   findOneUserById: (
     id: mongoose.Types.ObjectId,
@@ -36,7 +34,7 @@ interface IUserModel extends Model<IUser> {
 
 const Schema = mongoose.Schema;
 
-const userSchema: mongoose.Schema<IUser> = new Schema(
+const userSchema = new Schema<IUser>(
   {
     email: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
@@ -124,17 +122,19 @@ userSchema.statics.findBySearchQuery = async function (
   searchQuery: string
 ): Promise<IUser[]> {
   return await this.find({
-    fullName: { $regex: searchQuery, $options: "i" },
+    fullName: { $regex: escapeRegExp(searchQuery), $options: "i" },
   }).select("_id fullName profilePicture");
 };
 
-userSchema.statics.findAllUsers = async function (): Promise<IUser[]> {
-  return await this.find({}).select("-password -__v");
+userSchema.statics.findAllUsers = async function (
+  skip: number,
+  limit: number
+): Promise<IUser[]> {
+  return await this.find({}).select("-password -__v").skip(skip).limit(limit);
 };
 
-userSchema.pre<IUser>("save", function (next): void {
+userSchema.pre<IUser>("save", function (): void {
   this.fullName = `${this.firstName} ${this.lastName}`;
-  next();
 });
 
 userSchema.statics.findUserById = async function (
@@ -168,7 +168,9 @@ userSchema.methods.generateAuthToken = async function (): Promise<string> {
     coverPhoto: user.coverPhoto,
   };
 
-  return jwt.sign(payload, config.get("jwtPrivateKey"));
+  return jwt.sign(payload, config.get<string>("jwtPrivateKey"), {
+    expiresIn: config.get<number>("jwtExpiresIn"),
+  });
 };
 
 userSchema.methods.validatePassword = async function (
@@ -183,9 +185,8 @@ userSchema.methods.validatePassword = async function (
   return validPassword;
 };
 
-userSchema.pre<IUser>("save", function (next) {
+userSchema.pre<IUser>("save", function (): void {
   this.age = moment().diff(this.birthDate, "years");
-  next();
 });
 
 const UserModel: IUserModel = mongoose.model<IUser, IUserModel>(

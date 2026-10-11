@@ -1,4 +1,5 @@
 {
   "jwtPrivateKey": "social_medial_jwtPrivateKey",
+  "jwtExpiresIn": 604800,
   "ATLAS_DB": "social_media_ATLAS_DB"
 }

@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { pick } from "lodash";
 import Joi, { ValidationResult } from "joi";
 import { IComment, IReceivedComment } from "../interfaces/comments";
@@ -20,7 +20,7 @@ const Schema = mongoose.Schema;
 
 const commentSchema = new Schema(
   {
-    post: { type: Schema.Types.ObjectId, ref: "Post", required: true },
+    post: { type: Schema.Types.ObjectId, ref: "Post", required: true, index: true },
     comment: { type: String, Required: true },
     createdBy: {
       type: new Schema({

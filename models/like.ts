@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import { ILike } from "../interfaces/like";
 
@@ -16,15 +16,15 @@ interface ILikeModel extends Model<ILike> {
     userId: mongoose.Types.ObjectId,
     postId: mongoose.Types.ObjectId
   ) => ILike;
-  findAllLikes: () => Promise<ILike[]>;
+  findAllLikes: (skip: number, limit: number) => Promise<ILike[]>;
 }
 
 const Schema = mongoose.Schema;
 
 const likeSchema = new Schema(
   {
-    postId: { type: Schema.Types.ObjectId, ref: "Post", required: true },
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    postId: { type: Schema.Types.ObjectId, ref: "Post", required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     likesCount: { type: Number, default: 0 },
   },
   {
@@ -65,8 +65,11 @@ likeSchema.statics.createLike = function (
   return like;
 };
 
-likeSchema.statics.findAllLikes = async function name(): Promise<ILike[]> {
-  return await this.find({}).select("-__v");
+likeSchema.statics.findAllLikes = async function (
+  skip: number,
+  limit: number
+): Promise<ILike[]> {
+  return await this.find({}).select("-__v").skip(skip).limit(limit);
 };
 
 export const validate = (post: object): ValidationResult => {

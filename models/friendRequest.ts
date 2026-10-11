@@ -29,9 +29,9 @@ interface IFriendRequestModel extends Model<IFriendRequest> {
 
 const Schema = mongoose.Schema;
 
-const friendRequestSchema: mongoose.Schema<IFriendRequest> = new Schema({
-  requester: { type: mongoose.Types.ObjectId, required: true },
-  recipient: { type: mongoose.Types.ObjectId, required: true },
+const friendRequestSchema = new Schema<IFriendRequest>({
+  requester: { type: mongoose.Types.ObjectId, required: true, index: true },
+  recipient: { type: mongoose.Types.ObjectId, required: true, index: true },
   status: {
     type: String,
     required: true,
