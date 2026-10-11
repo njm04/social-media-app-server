@@ -1,0 +1,2321 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Social Media App Server API",
+    "version": "1.0.0",
+    "description": "API documentation derived from the Express routes and Mongoose models. Successful operations generally return HTTP 200. Errors are plain text. JWTs use the x-auth-token header. Login and registration share a limit of 20 requests per client IP per 15 minutes outside tests. Request sanitization removes object keys beginning with $ or containing a dot. Only routes mounted in startup/routes.ts are documented; chat and message models have no mounted HTTP endpoints."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Local development; change the port to match PORT."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Posts"
+    },
+    {
+      "name": "Comments"
+    },
+    {
+      "name": "Likes"
+    },
+    {
+      "name": "Images"
+    },
+    {
+      "name": "Friends"
+    }
+  ],
+  "security": [
+    {
+      "AuthToken": []
+    }
+  ],
+  "paths": {
+    "/auth": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "login",
+        "summary": "Sign in and return a JWT",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              },
+              "example": {
+                "email": "jane@example.com",
+                "password": "ExamplePassword123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JWT returned as plain text.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "Signed JWT."
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/logout/{userId}": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "logout",
+        "summary": "Set a user's status to offline",
+        "description": "The current route has no authentication middleware. Invalid ObjectId syntax may return 500.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "User to mark offline.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/register": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "registerUser",
+        "summary": "Register a user",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Registration"
+              },
+              "example": {
+                "email": "jane@example.com",
+                "firstName": "Jane",
+                "lastName": "Doe",
+                "gender": "female",
+                "birthDate": "1990-01-01",
+                "password": "ExamplePassword123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered user. The current response includes the persisted password hash.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "getCurrentUser",
+        "summary": "Get the authenticated user",
+        "responses": {
+          "200": {
+            "description": "Authenticated user without password. If the token refers to a missing user, the handler returns an empty body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "listUsers",
+        "summary": "List users",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User documents excluding password and __v.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/update-profile-picture/{id}": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "updateProfilePicture",
+        "summary": "Update profile picture",
+        "description": "Updates name and url and saves a separate image metadata record. The handler does not validate the body. The response currently includes the persisted password hash.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Photo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/update-cover-photo/{id}": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "updateCoverPhoto",
+        "summary": "Update cover photo",
+        "description": "Updates name and url and saves a separate image metadata record. The handler does not validate the body. The response currently includes the persisted password hash.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Photo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/search": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "searchUsersWithoutQuery",
+        "summary": "Return an empty user search result",
+        "responses": {
+          "200": {
+            "description": "An empty array when the optional search term is absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSearchResult"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/users/search/{searchQuery}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "searchUsers",
+        "summary": "Search users by full name",
+        "parameters": [
+          {
+            "name": "searchQuery",
+            "in": "path",
+            "required": true,
+            "description": "Case-insensitive literal substring of fullName.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSearchResult"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/posts": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "operationId": "listPosts",
+        "summary": "List posts with comment counts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeedPost"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "operationId": "createPost",
+        "summary": "Create a post",
+        "description": "postedBy is a user ID in the request; the response embeds author details. imageData is assigned to postImages and saved as a separate image record.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePost"
+              },
+              "example": {
+                "post": "Hello, world!",
+                "postedBy": "507f1f77bcf86cd799439011",
+                "imageData": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/posts/like": {
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "operationId": "updatePostLikes",
+        "summary": "Update a post's like count",
+        "description": "Checks the separate Like collection. With no existing Like record it increments the post counter; with an existing record it attempts to delete it and decrement. This endpoint does not create a Like record. The current unlike branch checks a legacy deletion result field and may leave the request without a response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUserIds"
+              },
+              "example": {
+                "postId": "507f1f77bcf86cd799439012",
+                "userId": "507f1f77bcf86cd799439011"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "patch": {
+        "tags": [
+          "Posts"
+        ],
+        "operationId": "updatePost",
+        "summary": "Update post text",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePost"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Posts"
+        ],
+        "operationId": "deletePost",
+        "summary": "Delete a post",
+        "description": "The handler currently checks a legacy deletion result field. With the installed Mongoose version it may return 400 Unable to delete after removing the post. The documented 200 response is the handler's success branch.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/comments": {
+      "post": {
+        "tags": [
+          "Comments"
+        ],
+        "operationId": "createComment",
+        "summary": "Create a comment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateComment"
+              },
+              "example": {
+                "post": "507f1f77bcf86cd799439012",
+                "comment": "Nice post!",
+                "userId": "507f1f77bcf86cd799439011"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Comments"
+        ],
+        "operationId": "listCommentCounts",
+        "summary": "List stored comment counters",
+        "description": "This route returns comment-count documents, not comments. Returns false if no counters exist. Marked unused in the source.",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommentCount"
+                      }
+                    },
+                    {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/comments/{id}": {
+      "get": {
+        "tags": [
+          "Comments"
+        ],
+        "operationId": "listPostComments",
+        "summary": "List comments for a post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID, rather than a comment ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment documents excluding __v and updatedAt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Comments"
+        ],
+        "operationId": "updateComment",
+        "summary": "Update a comment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Comment ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateComment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Comments"
+        ],
+        "operationId": "deleteComment",
+        "summary": "Delete a comment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Comment ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/likes": {
+      "get": {
+        "tags": [
+          "Likes"
+        ],
+        "operationId": "listLikes",
+        "summary": "List like records",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like documents excluding __v.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Like"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Likes"
+        ],
+        "operationId": "createLike",
+        "summary": "Create or return a like record",
+        "description": "Returns an existing like for this post and user if present. Creates a Like document otherwise. Does not update the post's likes counter.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUserIds"
+              },
+              "example": {
+                "postId": "507f1f77bcf86cd799439012",
+                "userId": "507f1f77bcf86cd799439011"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Likes"
+        ],
+        "operationId": "deleteLike",
+        "summary": "Delete a like record",
+        "description": "Reads userId and postId from a JSON DELETE body. Does not update the post counter. Marked unused in the source.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUserIds"
+              },
+              "example": {
+                "postId": "507f1f77bcf86cd799439012",
+                "userId": "507f1f77bcf86cd799439011"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Like"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/images": {
+      "get": {
+        "tags": [
+          "Images"
+        ],
+        "operationId": "listImages",
+        "summary": "List image metadata",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Image"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Images"
+        ],
+        "operationId": "createImage",
+        "summary": "Create an image metadata record",
+        "description": "Accepts JSON metadata rather than a file upload. Marked unused by the frontend in the source.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateImage"
+              },
+              "example": {
+                "userId": "507f1f77bcf86cd799439011",
+                "imageData": {
+                  "name": "photo.jpg",
+                  "url": "https://example.com/photo.jpg"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Image"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/images/{id}": {
+      "patch": {
+        "tags": [
+          "Images"
+        ],
+        "operationId": "updateImage",
+        "summary": "Replace an image record's metadata",
+        "description": "Marked unused by the frontend in the source.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Image document ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateImage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Image"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/InvalidId"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Images"
+        ],
+        "operationId": "deletePostImage",
+        "summary": "Delete an image record by post ID",
+        "description": "Deletes one matching image metadata document by postId. The path parameter is named id here so equivalent OpenAPI path templates share one Path Item. Invalid ID syntax can return 500.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID associated with the image; this is req.params.postId in the Express route, not the image document ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Image"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/friends": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "listFriendRequests",
+        "summary": "List the current user's friend requests",
+        "description": "Matches requester or recipient and excludes rejected requests.",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendRequest"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "createFriendRequest",
+        "summary": "Create a friend request",
+        "description": "Rejects an existing request with the same requester and recipient. The current handler starts save() without awaiting it before sending the response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFriendRequest"
+              },
+              "example": {
+                "requester": "507f1f77bcf86cd799439011",
+                "recipient": "507f1f77bcf86cd799439012",
+                "status": "requested"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/friends/accepted": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "listFriends",
+        "summary": "List accepted friends",
+        "description": "Returns projected user details for the other participant in accepted requests. A missing user can appear as null.",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendUser"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/friends/friend-request-notification": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "listIncomingFriendRequests",
+        "summary": "List incoming pending friend requests",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendRequest"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/friends/{id}": {
+      "patch": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "updateFriendRequest",
+        "summary": "Update friend request status",
+        "description": "Checks that status is present. Invalid ObjectId syntax may return 500; no validateObjectId middleware is applied.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Friend request ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFriendRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "deleteFriendRequest",
+        "summary": "Delete a friend request",
+        "description": "Invalid ObjectId syntax may return 500; no validateObjectId middleware is applied.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Friend request ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/friends/reject-request/{id}": {
+      "patch": {
+        "tags": [
+          "Friends"
+        ],
+        "operationId": "rejectFriendRequest",
+        "summary": "Update status through the rejection endpoint",
+        "description": "Marked unused in the source. Accepts the supplied status; it does not force rejected.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Friend request ID.",
+            "schema": {
+              "$ref": "#/components/schemas/ObjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFriendRequest"
+              },
+              "example": {
+                "status": "rejected"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AuthToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-auth-token",
+        "description": "Paste the JWT returned as plain text by POST /auth. Do not add a Bearer prefix."
+      }
+    },
+    "parameters": {
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number; values below 1 are clamped to 1.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Page size; clamped to 1–100. A missing or zero value uses 20.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid payload, invalid token, missing entity, duplicate registration, or rejected operation. The body is a plain-text message.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing x-auth-token header.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Access denied. No token provided."
+            }
+          }
+        }
+      },
+      "InvalidId": {
+        "description": "Invalid ObjectId rejected by validateObjectId middleware.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Invalid id"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many login or registration requests from this IP; retry after the rate-limit window.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected failure. Handlers return a plain-text error message.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Something failed. Please try again later."
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "example": "507f1f77bcf86cd799439011"
+      },
+      "Photo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "profile.jpg"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://example.com/images/profile.jpg"
+          }
+        }
+      },
+      "PhotoInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "description": "Image metadata. URLs are strings; the API does not upload binary image data."
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "addressTwo": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deactivated",
+              "unverified",
+              "online",
+              "offline"
+            ]
+          },
+          "friends": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isDeleted": {
+            "type": "boolean"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/Photo"
+          },
+          "coverPhoto": {
+            "$ref": "#/components/schemas/Photo"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "User document without the password field. Optional projections may omit __v."
+      },
+      "UserDocument": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "addressTwo": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deactivated",
+              "unverified",
+              "online",
+              "offline"
+            ]
+          },
+          "friends": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isDeleted": {
+            "type": "boolean"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/Photo"
+          },
+          "coverPhoto": {
+            "$ref": "#/components/schemas/Photo"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "password": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Persisted password hash. Registration and photo-update handlers currently return this field."
+          }
+        }
+      },
+      "UserSearchResult": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/Photo"
+          }
+        }
+      },
+      "FriendUser": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/Photo"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Login": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 5,
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000,
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Registration": {
+        "type": "object",
+        "required": [
+          "email",
+          "firstName",
+          "lastName",
+          "gender",
+          "birthDate",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 5,
+            "maxLength": 255
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gender": {
+            "type": "string",
+            "minLength": 1
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Any Joi-accepted date; the response serializes it as a date-time."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000,
+            "writeOnly": true
+          },
+          "contactNumber": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 20
+          },
+          "address": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255
+          },
+          "addressTwo": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "city": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255
+          },
+          "zip": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "description": "Stored status must match the User enum."
+          },
+          "isDeleted": {
+            "type": "boolean",
+            "description": "Accepted by validation but omitted from the fields persisted by registration."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Author": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          }
+        }
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "post": {
+            "type": "string"
+          },
+          "postedBy": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "likes": {
+            "type": "number",
+            "default": 0
+          },
+          "postImages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FeedPost": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Post"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "commentCount": {
+                "type": "integer",
+                "description": "Number of comments computed by aggregation."
+              }
+            }
+          }
+        ]
+      },
+      "CreatePost": {
+        "type": "object",
+        "required": [
+          "post",
+          "postedBy"
+        ],
+        "properties": {
+          "post": {
+            "type": "string",
+            "description": "Required; an empty string is accepted."
+          },
+          "postedBy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "imageData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Photo"
+            }
+          }
+        }
+      },
+      "UpdatePost": {
+        "type": "object",
+        "required": [
+          "newPost"
+        ],
+        "properties": {
+          "newPost": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "PostUserIds": {
+        "type": "object",
+        "required": [
+          "postId",
+          "userId"
+        ],
+        "properties": {
+          "postId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "post": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateComment": {
+        "type": "object",
+        "required": [
+          "post",
+          "comment",
+          "userId"
+        ],
+        "properties": {
+          "post": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateComment": {
+        "type": "object",
+        "required": [
+          "updatedComment"
+        ],
+        "properties": {
+          "updatedComment": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "CommentCount": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "postId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      },
+      "Like": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "postId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "likesCount": {
+            "type": "number",
+            "default": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "imageData": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Photo"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "_id": {
+                      "$ref": "#/components/schemas/ObjectId"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "postId": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/ObjectId"
+          }
+        },
+        "description": "Stored image metadata. Listing omits __v and imageData._id."
+      },
+      "CreateImage": {
+        "type": "object",
+        "required": [
+          "userId"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "imageData": {
+            "$ref": "#/components/schemas/PhotoInput"
+          }
+        },
+        "additionalProperties": false,
+        "description": "imageData is optional in the current validator and is stored as an array."
+      },
+      "UpdateImage": {
+        "type": "object",
+        "properties": {
+          "imageData": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Photo"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Photo"
+                }
+              }
+            ],
+            "description": "Mongoose casts a single metadata object to an array. The handler does not validate this field."
+          }
+        }
+      },
+      "FriendRequest": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "__v": {
+            "type": "integer",
+            "description": "Mongoose version; omitted by some list endpoints."
+          },
+          "requester": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "status": {
+            "type": "string",
+            "description": "Usually requested, accepted, or rejected. Update handlers do not enforce the schema enum."
+          }
+        }
+      },
+      "CreateFriendRequest": {
+        "type": "object",
+        "required": [
+          "requester",
+          "recipient",
+          "status"
+        ],
+        "properties": {
+          "requester": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "recipient": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MongoDB ObjectId as a 24-character hexadecimal string. Body validation checks presence; invalid IDs may produce a server error.",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Normally requested. Persisted documents use requested, accepted, or rejected; Joi only checks for a nonempty string."
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateFriendRequest": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Typically accepted or rejected. The update handler checks presence and does not enforce the schema enum.",
+            "example": "accepted"
+          }
+        }
+      },
+      "EmptyObject": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  }
+}
